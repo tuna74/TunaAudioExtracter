@@ -1,3 +1,6 @@
+// Copyright Andreas Tunek
+// Licensed under GPL V3 or later
+
 #include <gtkmm.h>
 #include "player_window.hh"
 
