@@ -1,0 +1,7 @@
+*.hh~
+*.h~
+*.cc~
+*.c~
+*.o
+*makefile~
+*gitignore~
