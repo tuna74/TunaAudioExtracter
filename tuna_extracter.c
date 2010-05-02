@@ -164,6 +164,7 @@ static gboolean continue_autodecoding (GstElement *pipeline,
     return FALSE;
   }
 
+  //this messes up the EOS signal but makes everything much faster
   /* else if (g_strrstr (gst_caps_to_string(caps),"video/x")){ */
   /*   GstElement* fakesinker = gst_element_factory_make("fakesink", */
   /* 						      "fakesinker"); */
