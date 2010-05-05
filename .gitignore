@@ -3,5 +3,6 @@
 *.cc~
 *.c~
 *.o
-*makefile~
-*gitignore~
+makefile~
+README~
+gitignore~
