@@ -1,0 +1,6 @@
+TunaPlayer is a program that lets you dump audio from video files. The gui should be easy to figure out.
+
+To compile the program you will need the gstreamer and gtkmm devel packages as well ass gcc, gcc++ and gnu make. Get them from your distro. When you have all the tools and libraries, compile with 'make' and run the program with ./tunaplayer
+
+
+All code is (unless otherwise stated) copyright Andreas Tunek and licensed under the GNU GPL V3 or later.
