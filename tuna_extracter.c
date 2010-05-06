@@ -83,6 +83,8 @@ tuna_extracter_init (TunaExtracter *self)
   self->pipeline = gst_pipeline_new("pipeline"); 
   self->outfile = gst_element_factory_make("filesink", "outfile");
   self->filetype = "";
+  self->audio_found = FALSE;
+  self->video_found = FALSE;
 }
 
 TunaExtracter*
@@ -134,49 +136,61 @@ gboolean tuna_extracter_set_filename(TunaExtracter *self,
 }
 
 
+void set_audio_pad(TunaExtracter* self, GstPad* audio_pad, gchar* type)
+{
+  self->audiopad = audio_pad;
+  self->filetype = type;
+  self->audio_found = TRUE;
+}
+
 //this function stop when it has found the right caps (return false;)
 //if the function returns true the pipeline will be modified and decodebin2 will continue it's work
 static gboolean continue_autodecoding (GstElement *pipeline,
 				       GstPad* unknown_pad,
 				       GstCaps *caps,
-				       gpointer extractor){
+				       gpointer extractor_){
+
+  //less casting
+  TunaExtracter* extractor = (TunaExtracter*)extractor_;
   if(TE_DEBUG){
     g_print("In continue_autodecoding.\n");  
     GST_LOG ("Caps are %" GST_PTR_FORMAT, caps);
     g_print ("Media type %s found.\n", gst_caps_to_string(caps));
+    g_print("audio_found %d\n", extractor->audio_found);
+    g_print("video_found %d\n", extractor->video_found);
   }
   if (g_strrstr (gst_caps_to_string(caps), 
 		 "audio/mpeg, mpegversion=(int)1, layer=(int)3")){
     g_print ("Found a mp3.\n");
-    ((TunaExtracter *)extractor)->filetype = "mp3";
-    return FALSE;
+    set_audio_pad(extractor, unknown_pad, "mp3");
   }
   else if (g_strrstr (gst_caps_to_string(caps), 
 		 "audio/mpeg, mpegversion=(int)1, layer=(int)[ 1, 3 ]")){
     g_print ("Found a mp2.\n");
-    ((TunaExtracter *)extractor)->filetype = "mp2";
-    return FALSE;
+    set_audio_pad(extractor, unknown_pad, "mp2");
   }
   else if (g_strrstr (gst_caps_to_string(caps), 
 		 "audio/x-raw")){
     g_print ("Found raw.\n");
-    ((TunaExtracter *)extractor)->filetype = "flac";
-    return FALSE;
+    set_audio_pad(extractor, unknown_pad, "flac");
   }
 
   //this messes up the EOS signal but makes everything much faster
-  /* else if (g_strrstr (gst_caps_to_string(caps),"video/x")){ */
-  /*   GstElement* fakesinker = gst_element_factory_make("fakesink", */
-  /* 						      "fakesinker"); */
-  /*   gst_bin_add(GST_BIN(pipeline), fakesinker); */
-  /*   GstPad* fakesinker_sink = gst_element_get_pad(fakesinker, "sink"); */
-  /*   g_print("Linking pads in continue_autodecoding: %d\n", */
-  /* 	    gst_pad_link(unknown_pad, */
-  /* 			 fakesinker_sink)); */
-  /*   return TRUE; */
-  /* } */
+  else if (g_strrstr (gst_caps_to_string(caps),"video/x-divx")){
+    if (!extractor->video_found) {  
+      GstElement* fakesinker = gst_element_factory_make("fakesink",
+  						      "fakesinker");
+      //      gst_bin_add(GST_BIN(extractor->pipeline), fakesinker);
+      gst_bin_add(GST_BIN(pipeline), fakesinker);
+      GstPad* fakesinker_sink = gst_element_get_pad(fakesinker, "sink");
+      g_print("Linking pads in continue_autodecoding: %d\n",
+	      gst_pad_link(unknown_pad,
+			   fakesinker_sink));
+      extractor->video_found = TRUE;
+    }
+  }
 
-  return TRUE;
+  return !(extractor->video_found && extractor->audio_found);
 }
 
 
@@ -194,7 +208,7 @@ static void found_audio(GstElement* object,
 void filetype_found(TunaExtracter *self,
 		    GstPad* audio_pad){
   
-  self->audiopad = audio_pad;
+  //  self->audiopad = audio_pad;
   g_signal_emit_by_name(self,
 			"filetype_found",
 			self->filetype);

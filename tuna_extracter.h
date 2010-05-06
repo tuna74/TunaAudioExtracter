@@ -41,8 +41,9 @@ typedef struct {
   gchar* filetype;
 
   /*the path (whole file name) for the outfile, could be replaced with some gio stuff in the future*/
-  //gchar* outfilename;
   GstPad *audiopad;
+  gboolean audio_found;
+  gboolean video_found;
 } TunaExtracter;
 
 typedef struct {
