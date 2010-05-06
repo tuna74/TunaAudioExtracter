@@ -178,19 +178,21 @@ static gboolean continue_autodecoding (GstElement *pipeline,
   //this messes up the EOS signal but makes everything much faster
   else if (g_strrstr (gst_caps_to_string(caps),"video/x-divx")){
     if (!extractor->video_found) {  
-      GstElement* fakesinker = gst_element_factory_make("fakesink",
-  						      "fakesinker");
-      //      gst_bin_add(GST_BIN(extractor->pipeline), fakesinker);
-      gst_bin_add(GST_BIN(pipeline), fakesinker);
-      GstPad* fakesinker_sink = gst_element_get_pad(fakesinker, "sink");
-      g_print("Linking pads in continue_autodecoding: %d\n",
-	      gst_pad_link(unknown_pad,
-			   fakesinker_sink));
+
+      /* GstElement* fakesinker = gst_element_factory_make("fakesink", */
+      /* 						      "fakesinker"); */
+      /* //      gst_bin_add(GST_BIN(extractor->pipeline), fakesinker); */
+      /* gst_bin_add(GST_BIN(pipeline), fakesinker); */
+      /* GstPad* fakesinker_sink = gst_element_get_pad(fakesinker, "sink"); */
+      /* g_print("Linking pads in continue_autodecoding: %d\n", */
+      /* 	      gst_pad_link(unknown_pad, */
+      /* 			   fakesinker_sink)); */
+      extractor->videopad = unknown_pad;
       extractor->video_found = TRUE;
     }
   }
 
-  return !(extractor->video_found && extractor->audio_found);
+  return !(extractor->video_found || extractor->audio_found);
 }
 
 
@@ -205,10 +207,19 @@ static void found_audio(GstElement* object,
 		 unknown_pad);
 }
 
+
 void filetype_found(TunaExtracter *self,
 		    GstPad* audio_pad){
   
-  //  self->audiopad = audio_pad;
+  GstElement* fakesinker = gst_element_factory_make("fakesink",
+      						      "fakesinker");
+  gst_bin_add(GST_BIN(self->pipeline), fakesinker);
+  GstPad* fakesinker_sink = gst_element_get_pad(fakesinker, "sink");
+  g_print("video_pad is linked %d\n", gst_pad_is_linked(self->videopad));
+  g_print("Linking pads in filetype_found: %d\n",
+	  gst_pad_link(self->videopad ,
+		       fakesinker_sink));
+  
   g_signal_emit_by_name(self,
 			"filetype_found",
 			self->filetype);

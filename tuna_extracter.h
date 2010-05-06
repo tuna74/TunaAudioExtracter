@@ -42,6 +42,7 @@ typedef struct {
 
   /*the path (whole file name) for the outfile, could be replaced with some gio stuff in the future*/
   GstPad *audiopad;
+  GstPad *videopad;
   gboolean audio_found;
   gboolean video_found;
 } TunaExtracter;
