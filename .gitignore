@@ -5,5 +5,5 @@
 *.o
 makefile~
 README~
-.gitignore~.
+.gitignore~
 tunaplayer
