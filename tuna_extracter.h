@@ -44,7 +44,9 @@ typedef struct {
   GstPad *audiopad;
   GstPad *videopad;
   gboolean audio_found;
+  gboolean audio_plugged;
   gboolean video_found;
+  gboolean video_plugged;
 } TunaExtracter;
 
 typedef struct {

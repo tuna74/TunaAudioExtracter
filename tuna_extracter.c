@@ -88,6 +88,8 @@ tuna_extracter_init (TunaExtracter *self)
   self->filetype = "";
   self->audio_found = FALSE;
   self->video_found = FALSE;
+  self->audio_plugged = FALSE;
+  self->video_plugged = FALSE;
 }
 
 TunaExtracter*
@@ -146,6 +148,14 @@ void set_audio_pad(TunaExtracter* self, GstPad* audio_pad, gchar* type)
   self->audio_found = TRUE;
 }
 
+
+void set_video_pad(TunaExtracter* self, GstPad* video_pad)
+{
+  self->videopad = video_pad;
+  self->video_found = TRUE;
+}
+
+
 //this function stop when it has found the right caps (return false;)
 //if the function returns true the pipeline will be modified and decodebin2 will continue it's work
 static gboolean continue_autodecoding (GstElement *pipeline,
@@ -155,6 +165,8 @@ static gboolean continue_autodecoding (GstElement *pipeline,
 
   //less casting
   TunaExtracter* extractor = (TunaExtracter*)extractor_;
+  gboolean ret = TRUE;
+
   if(TE_DEBUG){
     g_print("In continue_autodecoding.\n");  
     GST_LOG ("Caps are %" GST_PTR_FORMAT, caps);
@@ -162,40 +174,44 @@ static gboolean continue_autodecoding (GstElement *pipeline,
     g_print("audio_found %d\n", extractor->audio_found);
     g_print("video_found %d\n", extractor->video_found);
   }
-  if (g_strrstr (gst_caps_to_string(caps), 
-		 "audio/mpeg, mpegversion=(int)1, layer=(int)3")){
-    g_print ("Found a mp3.\n");
-    set_audio_pad(extractor, unknown_pad, "mp3");
-  }
-  else if (g_strrstr (gst_caps_to_string(caps), 
-		 "audio/mpeg, mpegversion=(int)1, layer=(int)[ 1, 3 ]")){
-    g_print ("Found a mp2.\n");
-    set_audio_pad(extractor, unknown_pad, "mp2");
-  }
-  else if (g_strrstr (gst_caps_to_string(caps), 
-		 "audio/x-raw")){
-    g_print ("Found raw.\n");
-    set_audio_pad(extractor, unknown_pad, "flac");
-  }
-
-  //this messes up the EOS signal but makes everything much faster
-  else if (g_strrstr (gst_caps_to_string(caps),"video/x-divx")){
-    if (!extractor->video_found) {  
-
-      /* GstElement* fakesinker = gst_element_factory_make("fakesink", */
-      /* 						      "fakesinker"); */
-      /* //      gst_bin_add(GST_BIN(extractor->pipeline), fakesinker); */
-      /* gst_bin_add(GST_BIN(pipeline), fakesinker); */
-      /* GstPad* fakesinker_sink = gst_element_get_pad(fakesinker, "sink"); */
-      /* g_print("Linking pads in continue_autodecoding: %d\n", */
-      /* 	      gst_pad_link(unknown_pad, */
-      /* 			   fakesinker_sink)); */
-      extractor->videopad = unknown_pad;
-      extractor->video_found = TRUE;
+  if (!extractor->audio_found) {
+    if (g_strrstr (gst_caps_to_string(caps), 
+		   "audio/mpeg, mpegversion=(int)1, layer=(int)3")){
+      g_print ("Found a mp3.\n");
+      set_audio_pad(extractor, unknown_pad, "mp3");
+      ret = FALSE;
+    }
+    else if (g_strrstr (gst_caps_to_string(caps), 
+			"audio/mpeg, mpegversion=(int)1, layer=(int)[ 1, 3 ]")){
+      g_print ("Found a mp2.\n");
+      set_audio_pad(extractor, unknown_pad, "mp2");
+      ret = FALSE;
+    }
+    else if (g_strrstr (gst_caps_to_string(caps), 
+			"audio/x-raw")){
+      g_print ("Found raw.\n");
+      set_audio_pad(extractor, unknown_pad, "flac");
+      ret = FALSE;
     }
   }
 
-  return !(extractor->video_found || extractor->audio_found);
+  if (!extractor->video_found) {  
+    if (g_strrstr (gst_caps_to_string(caps),"video/x-divx")){
+      set_video_pad(extractor, unknown_pad);
+      ret = FALSE;
+    }
+    else if (g_strrstr (gst_caps_to_string(caps),"video/x-h264")){
+      set_video_pad(extractor, unknown_pad);
+      ret = FALSE;
+    }
+    //slow fallback
+    else if (g_strrstr (gst_caps_to_string(caps),"video/x-raw")){
+      set_video_pad(extractor, unknown_pad);
+      ret = FALSE;
+    }
+  }
+
+  return ret;
 }
 
 
@@ -214,24 +230,30 @@ static void found_audio(GstElement* object,
 void filetype_found(TunaExtracter *self,
 		    GstPad* audio_pad){
   
-  GstElement* fakesinker = gst_element_factory_make("fakesink",
+  if (self->video_found && !self->video_plugged) {
+    GstElement* fakesinker = gst_element_factory_make("fakesink",
       						      "fakesinker");
-  gst_bin_add(GST_BIN(self->pipeline), fakesinker);
-  GstPad* fakesinker_sink = gst_element_get_pad(fakesinker, "sink");
-  g_print("video_pad is linked %d\n", gst_pad_is_linked(self->videopad));
-  g_print("Linking pads in filetype_found: %d\n",
-	  gst_pad_link(self->videopad ,
-		       fakesinker_sink));
-  
-  g_signal_emit_by_name(self,
-			"filetype_found",
-			self->filetype);
+    gst_bin_add(GST_BIN(self->pipeline), fakesinker);
+    GstPad* fakesinker_sink = gst_element_get_pad(fakesinker, "sink");
+    g_print("video_pad is linked %d\n", gst_pad_is_linked(self->videopad));
+    g_print("Linking pads in filetype_found: %d\n",
+	    gst_pad_link(self->videopad ,
+			 fakesinker_sink));
+    self->video_plugged = TRUE;
+  }
+
+  if (self->audio_found && !self->audio_plugged) {
+    self->audio_plugged = TRUE;
+    g_signal_emit_by_name(self,
+			  "filetype_found",
+			  self->filetype);
+  }
 }
 
-static gboolean
-extracter_bus_cb(GstBus *bus,
-		 GstMessage *message,
-		 gpointer self)
+
+static gboolean extracter_bus_cb(GstBus *bus,
+				 GstMessage *message,
+				 gpointer self)
 {
   switch (GST_MESSAGE_TYPE(message)){
   case GST_MESSAGE_EOS:{
