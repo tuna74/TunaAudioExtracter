@@ -29,8 +29,7 @@ static gboolean extracter_bus_cb (GstBus *bus,
 				  gpointer self);
 
 //will unref all objects created in tuna_extracter_init
-static void
-tuna_extracter_dispose (GObject *object)
+static void tuna_extracter_dispose (GObject *object)
 {
   if (G_OBJECT_CLASS (tuna_extracter_parent_class)->dispose)
     G_OBJECT_CLASS (tuna_extracter_parent_class)->dispose (object);
@@ -39,8 +38,8 @@ tuna_extracter_dispose (GObject *object)
   gst_object_unref(((TunaExtracter*)object)->pipeline);
 }
 
-static void
-tuna_extracter_finalize (GObject *object)
+
+static void tuna_extracter_finalize (GObject *object)
 {
   G_OBJECT_CLASS (tuna_extracter_parent_class)->finalize (object);
 }
@@ -78,8 +77,7 @@ tuna_extracter_class_init (TunaExtracterClass *klass)
 		 0);
 }
 
-static void
-tuna_extracter_init (TunaExtracter *self)
+static void tuna_extracter_init (TunaExtracter *self)
 {
   self->time_format = GST_FORMAT_TIME;
   self->stream_length = 0;
@@ -92,8 +90,7 @@ tuna_extracter_init (TunaExtracter *self)
   self->video_plugged = FALSE;
 }
 
-TunaExtracter*
-tuna_extracter_new (void)
+TunaExtracter* tuna_extracter_new (void)
 {
   return g_object_new (TUNA_TYPE_EXTRACTER, NULL);
 }
