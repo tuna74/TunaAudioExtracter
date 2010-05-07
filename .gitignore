@@ -5,4 +5,4 @@
 *.o
 makefile~
 README~
-gitignore~
+.gitignore~
