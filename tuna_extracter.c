@@ -201,6 +201,10 @@ static gboolean continue_autodecoding (GstElement *pipeline,
       set_video_pad(extractor, unknown_pad);
       ret = FALSE;
     }
+    else if (g_strrstr (gst_caps_to_string(caps),"video/x-xvid")){
+      set_video_pad(extractor, unknown_pad);
+      ret = FALSE;
+    }
     //slow fallback
     else if (g_strrstr (gst_caps_to_string(caps),"video/x-raw")){
       set_video_pad(extractor, unknown_pad);
