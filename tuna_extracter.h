@@ -1,3 +1,6 @@
+// Copyright Andreas Tunek 2010
+// Licensed under GPL V3 or later
+
 #ifndef _TUNA_EXTRACTER
 #define _TUNA_EXTRACTER
 

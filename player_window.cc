@@ -1,4 +1,5 @@
-//Andreas Tunek 2008
+// Copyright Andreas Tunek 2010
+// Licensed under GPL V3 or later
 
 #include "player_window.hh"
 #include <string>

@@ -1,3 +1,6 @@
+// Copyright Andreas Tunek
+// Licensed under GPL V3 or later
+
 #include "tuna_player.h"
 
 G_DEFINE_TYPE (TunaPlayer, tuna_player, G_TYPE_OBJECT);
