@@ -4,7 +4,7 @@
 #include "tuna_extracter.h"
 #include <string.h>
 
-#define TE_DEBUG FALSE
+#define TE_DEBUG TRUE
 
 G_DEFINE_TYPE (TunaExtracter, tuna_extracter, G_TYPE_OBJECT);
 
@@ -317,24 +317,29 @@ void plug_mp3(TunaExtracter *self){
 
   gst_bin_add (GST_BIN(self->pipeline), 
 	      self->outfile);
-  gst_element_set_state(self->outfile, GST_STATE_PLAYING);
-  GstPad *outfile_in = gst_element_get_pad(self->outfile, "sink");
   GstBus *bus = gst_pipeline_get_bus (GST_PIPELINE (self->pipeline));
   gst_bus_add_watch (bus, 
 		     extracter_bus_cb,
 		     self);
+
   g_print ("self->audiopad is %s\n",
 	   gst_caps_to_string(gst_pad_get_caps(self->audiopad)));
   
-  g_print("Linking pads in plug_mp3: %d\n",
-	  gst_pad_link(self->audiopad,
-		       outfile_in));
+  GstPad* outfile_in = gst_element_get_pad(self->outfile, "sink");
+  gint linkOk = gst_pad_link(self->audiopad,
+			     outfile_in);
+  if (GST_PAD_LINK_FAILED(linkOk)) {
+    g_print("Could not link self->audiopad to outfile_in plug_mp3.\n");
+  }
+
   //try to go to the start of the stream
   //don't know if the player is at the end
   gst_element_seek_simple(self->pipeline,
 			  self->time_format,
 			  GST_SEEK_FLAG_FLUSH,
 			  0);
+  gst_element_set_state(self->outfile, GST_STATE_PLAYING);
+
   if (TE_DEBUG)	   
     tuna_extracter_get_current_pos(self);
   
@@ -349,7 +354,7 @@ void plug_raw(TunaExtracter *self){
     g_print ("Audio type is %s.\n",
 	     self->filetype);
   } 
-
+  
   GstElement* audioconverter = gst_element_factory_make("audioconvert",
 						       "audioconverter");
   gst_bin_add(GST_BIN(self->pipeline), audioconverter);
@@ -359,26 +364,28 @@ void plug_raw(TunaExtracter *self){
   g_print ("audioconverter_sink is %s\n",
 	   gst_caps_to_string(gst_pad_get_caps(audioconverter_sink)));
   
-  g_print("Linking pads in plug_raw: %d\n",
-	  gst_pad_link(self->audiopad,
-		       audioconverter_sink));
+
+  gint linkOk = gst_pad_link(self->audiopad,
+			     audioconverter_sink);
+  if (GST_PAD_LINK_FAILED(linkOk)) {
+    g_print("Could not link self->audiopad to audioconverter_sink_in plug_raw.\n");
+  }
+
   gst_element_set_state(audioconverter, GST_STATE_PLAYING);
-
-
-  /* gst_element_set_state (GST_ELEMENT (self->pipeline), */
-  /* 			 GST_STATE_PAUSED); */
 
   GstElement* flacencoder = gst_element_factory_make("flacenc",
 						     "flacencoder");
   gst_bin_add(GST_BIN(self->pipeline), flacencoder);
-  if (! gst_element_link (audioconverter, flacencoder)) {
-    g_print ("Could not link audioconverter to flacencoder.\n");
-  } 
+  if (!gst_element_link(audioconverter,
+			    flacencoder)) {
+    g_print("Could not link audioconverter to flacencoder_sink_in plug_raw.\n");
+  }
   gst_element_set_state(flacencoder, GST_STATE_PLAYING);
+
   gst_bin_add (GST_BIN(self->pipeline), 
 	      self->outfile);
-  if (! gst_element_link (flacencoder, self->outfile)) {
-    g_print ("Could not link flacencoder to outfile.\n");
+  if (!gst_element_link (flacencoder, self->outfile)) {
+    g_print ("Could not link flacencoder to self->outfile in plug_raw.\n");
   } 
   gst_element_set_state(self->outfile, GST_STATE_PLAYING);
 
@@ -397,8 +404,6 @@ void plug_raw(TunaExtracter *self){
   			  self->time_format,
   			  GST_SEEK_FLAG_FLUSH,
   			  0);
-  gst_element_set_state (GST_ELEMENT (self->pipeline),
-  			 GST_STATE_PLAYING);
   
   if (TE_DEBUG) {
     g_print("Pos after %f\n", tuna_extracter_get_current_pos(self));
