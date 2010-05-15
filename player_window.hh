@@ -14,7 +14,7 @@ public:
   PlayerWindow();
   virtual void set_filename_and_play(const Glib::ustring&);
 
-  //since need to access object statically, see found_outfiletype_cb in .cc file
+  //need to access object statically, see found_outfiletype_cb in .cc file
   virtual void extracting_done(); 
   bool found_audio;
   gchar* outfiletype;
