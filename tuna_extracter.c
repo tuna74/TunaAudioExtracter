@@ -4,7 +4,7 @@
 #include "tuna_extracter.h"
 #include <string.h>
 
-#define TE_DEBUG TRUE
+#define TE_DEBUG FALSE
 
 G_DEFINE_TYPE (TunaExtracter, tuna_extracter, G_TYPE_OBJECT);
 
@@ -263,14 +263,18 @@ static gboolean extracter_bus_cb(GstBus *bus,
 {
   switch (GST_MESSAGE_TYPE(message)){
   case GST_MESSAGE_EOS:{
-    g_print("Got %s message in extracter_bus_callback.\n", GST_MESSAGE_TYPE_NAME(message));
+    if (TE_DEBUG) {
+      g_print("Got %s message in extracter_bus_callback.\n", 
+	      GST_MESSAGE_TYPE_NAME(message));
+    }
     g_signal_emit_by_name((TunaExtracter *)self,
 			  "extracting_done");
     return FALSE;
   }
   default:{
-    g_print ("Got %s message in extracter_bus_callback.\n", GST_MESSAGE_TYPE_NAME (message));
     if (TE_DEBUG) {
+      g_print ("Got %s message in extracter_bus_callback.\n", 
+	       GST_MESSAGE_TYPE_NAME (message));
       g_print("Pos in extracter_bus_cb %f\n", tuna_extracter_get_current_pos(self));
       g_print("Pipeline has state %d\n", 
 	      GST_STATE(((TunaExtracter *)self)->pipeline));
@@ -281,6 +285,7 @@ static gboolean extracter_bus_cb(GstBus *bus,
   return TRUE;
 }
 	
+
 gboolean tuna_extracter_set_outfilename(TunaExtracter *self,
 					const gchar* outfilename){
   g_object_set (self->outfile,
@@ -302,13 +307,13 @@ gboolean tuna_extracter_set_outfilename(TunaExtracter *self,
   return FALSE;
 }
 
+
 void plug_mp3(TunaExtracter *self){
   if (TE_DEBUG){
     g_print ("In plug_mp3.\n");
     g_print ("Audio type is %s.\n",
 	     self->filetype);
   } 
-
 
   gst_bin_add (GST_BIN(self->pipeline), 
 	      self->outfile);
@@ -407,9 +412,6 @@ void plug_raw(TunaExtracter *self){
  
  
 gdouble tuna_extracter_get_current_pos(TunaExtracter *self){
-  if (TE_DEBUG) {
-    //g_print("In tuna_extracter_get_current_pos(TunaExtracter *self).\n"); 
-  }
   if(self->stream_length == 0) 
     gst_element_query_duration(self->pipeline,
 			       &(self->time_format),
@@ -423,10 +425,8 @@ gdouble tuna_extracter_get_current_pos(TunaExtracter *self){
      ((gdouble) self->stream_length));
 
   if (TE_DEBUG) {
-    //g_print("self->stream_length: %"G_GINT64_FORMAT"\n", self->stream_length);
-    //g_print("current_pos: %"G_GINT64_FORMAT"\n", current_pos);
+    g_print("tuna_extracter_get_current_pos() will return %f.\n",
+    	    current_position);
   }
-  g_print("tuna_extracter_get_current_pos() will return %f.\n",
-	  current_position);
   return current_position;
 }

@@ -6,7 +6,7 @@
 #include <gtk/gtk.h>
 
 #define SCALE_RANGE 1000
-#define PW_DEBUG true
+#define PW_DEBUG false
 
 
 PlayerWindow::PlayerWindow() :   
@@ -24,7 +24,6 @@ PlayerWindow::PlayerWindow() :
 {
   //initialize our C GObject player
   player = tuna_player_new();
-
 
   // This just sets the title of our new window.
   set_title("Tuna Audio Extracter");
@@ -280,7 +279,7 @@ bool PlayerWindow::check_extracting_progress(){
   if(PW_DEBUG) g_print("In PlayerWindow::check_extracting().\n");
   gdouble pos = tuna_extracter_get_current_pos(extracter);
   if(PW_DEBUG) g_print("pos = %f\n", pos);
-  if (pos < 1.0){  //extracting is not done. When done signal "extracting_done" should come
+  if (pos <= 1.0){  //extracting is not done. When done signal "extracting_done" should come
     extracter_progress.set_fraction(pos);
     return true;
   }
