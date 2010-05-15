@@ -24,8 +24,8 @@ static void found_audio(GstElement* object,
 			gboolean arg1,
 			gpointer extracter);
 
-static gboolean extracter_bus_cb (GstBus *bus,
-				  GstMessage *message,
+static gboolean extracter_bus_cb (GstBus* bus,
+				  GstMessage* message,
 				  gpointer self);
 
 //will unref all objects created in tuna_extracter_init
@@ -257,8 +257,8 @@ void filetype_found(TunaExtracter *self,
 }
 
 
-static gboolean extracter_bus_cb(GstBus *bus,
-				 GstMessage *message,
+static gboolean extracter_bus_cb(GstBus* bus,
+				 GstMessage* message,
 				 gpointer self)
 {
   switch (GST_MESSAGE_TYPE(message)){
@@ -317,11 +317,6 @@ void plug_mp3(TunaExtracter *self){
 
   gst_bin_add (GST_BIN(self->pipeline), 
 	      self->outfile);
-  GstBus *bus = gst_pipeline_get_bus (GST_PIPELINE (self->pipeline));
-  gst_bus_add_watch (bus, 
-		     extracter_bus_cb,
-		     self);
-
   g_print ("self->audiopad is %s\n",
 	   gst_caps_to_string(gst_pad_get_caps(self->audiopad)));
   
@@ -331,6 +326,12 @@ void plug_mp3(TunaExtracter *self){
   if (GST_PAD_LINK_FAILED(linkOk)) {
     g_print("Could not link self->audiopad to outfile_in plug_mp3.\n");
   }
+  gst_element_set_state(self->outfile, GST_STATE_PLAYING);
+
+  GstBus* bus = gst_pipeline_get_bus (GST_PIPELINE (self->pipeline));
+  gst_bus_add_watch (bus, 
+		     extracter_bus_cb,
+		     self);
 
   //try to go to the start of the stream
   //don't know if the player is at the end
@@ -338,7 +339,6 @@ void plug_mp3(TunaExtracter *self){
 			  self->time_format,
 			  GST_SEEK_FLAG_FLUSH,
 			  0);
-  gst_element_set_state(self->outfile, GST_STATE_PLAYING);
 
   if (TE_DEBUG)	   
     tuna_extracter_get_current_pos(self);
@@ -416,7 +416,7 @@ void plug_raw(TunaExtracter *self){
 }
  
  
-gdouble tuna_extracter_get_current_pos(TunaExtracter *self){
+gdouble tuna_extracter_get_current_pos(TunaExtracter* self){
   if(self->stream_length == 0) 
     gst_element_query_duration(self->pipeline,
 			       &(self->time_format),
