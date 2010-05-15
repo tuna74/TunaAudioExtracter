@@ -27,7 +27,7 @@ PlayerWindow::PlayerWindow() :
 
 
   // This just sets the title of our new window.
-  set_title("tunaplayer");
+  set_title("Tuna Audio Extracter");
 
   // sets the border width of the window.
   set_border_width(10);
