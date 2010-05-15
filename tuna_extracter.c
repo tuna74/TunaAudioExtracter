@@ -138,6 +138,26 @@ gboolean tuna_extracter_set_filename(TunaExtracter *self,
 }
 
 
+gboolean is_video_pad(GstCaps* caps)
+{
+  gboolean ret = FALSE;
+  if (g_strrstr (gst_caps_to_string(caps),"video/x-divx")){
+    ret = TRUE;
+  }
+  else if (g_strrstr (gst_caps_to_string(caps),"video/x-h264")){
+    ret = TRUE;
+  }
+  else if (g_strrstr (gst_caps_to_string(caps),"video/x-xvid")){
+    ret = TRUE;
+  }
+  //slow fallback
+  else if (g_strrstr (gst_caps_to_string(caps),"video/x-raw")){
+    ret = TRUE;
+  }
+  return ret;
+}
+
+
 void set_audio_pad(TunaExtracter* self, GstPad* audio_pad, gchar* type)
 {
   self->audiopad = audio_pad;
@@ -192,24 +212,9 @@ static gboolean continue_autodecoding (GstElement *pipeline,
     }
   }
 
-  if (!extractor->video_found) {  
-    if (g_strrstr (gst_caps_to_string(caps),"video/x-divx")){
+  if (!extractor->video_found && is_video_pad(caps)) {
       set_video_pad(extractor, unknown_pad);
       ret = FALSE;
-    }
-    else if (g_strrstr (gst_caps_to_string(caps),"video/x-h264")){
-      set_video_pad(extractor, unknown_pad);
-      ret = FALSE;
-    }
-    else if (g_strrstr (gst_caps_to_string(caps),"video/x-xvid")){
-      set_video_pad(extractor, unknown_pad);
-      ret = FALSE;
-    }
-    //slow fallback
-    else if (g_strrstr (gst_caps_to_string(caps),"video/x-raw")){
-      set_video_pad(extractor, unknown_pad);
-      ret = FALSE;
-    }
   }
 
   return ret;
