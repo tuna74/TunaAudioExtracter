@@ -234,7 +234,7 @@ static void found_audio(GstElement* object,
 
 
 void filetype_found(TunaExtracter *self,
-		    GstPad* audio_pad){
+		    GstPad* unknown_pad){
   
   if (self->video_found && !self->video_plugged) {
     GstElement* fakesinker = gst_element_factory_make("fakesink",
