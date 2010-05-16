@@ -50,6 +50,7 @@ typedef struct {
   gboolean audio_plugged;
   gboolean video_found;
   gboolean video_plugged;
+  gboolean m4a_probably_without_frame;
 } TunaExtracter;
 
 typedef struct {
