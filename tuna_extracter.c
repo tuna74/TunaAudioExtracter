@@ -14,6 +14,7 @@ static gboolean continue_autodecoding (GstElement *pipeline,
 				       gpointer extracter);
 
 void plug_mp3(TunaExtracter *extracter);
+void plug_aac(TunaExtracter *extracter);
 void plug_raw(TunaExtracter *extracter);
 
 void filetype_found(TunaExtracter* extracter,
@@ -205,6 +206,14 @@ static gboolean continue_autodecoding (GstElement *pipeline,
       ret = FALSE;
     }
     else if (g_strrstr (gst_caps_to_string(caps), 
+			"audio/mpeg, mpegversion=(int)4") /* || */
+	     /* g_strrstr (gst_caps_to_string(caps),  */
+	     /* 		"audio/x-m4a") */){
+      g_print ("Found a aac.\n");
+      set_audio_pad(extractor, unknown_pad, "aac");
+      ret = FALSE;
+    }
+    else if (g_strrstr (gst_caps_to_string(caps), 
 			"audio/x-raw")){
       g_print ("Found raw.\n");
       set_audio_pad(extractor, unknown_pad, "flac");
@@ -298,6 +307,10 @@ gboolean tuna_extracter_set_outfilename(TunaExtracter *self,
      plug_mp3(self);
      return TRUE;
   }
+  if(strcmp(self->filetype, "aac") == 0) {
+     plug_aac(self);
+     return TRUE;
+  }
   else if(strcmp(self->filetype, "flac") == 0) {
      plug_raw(self);
      return TRUE;
@@ -348,19 +361,73 @@ void plug_mp3(TunaExtracter *self){
 }
 
 
+void plug_aac(TunaExtracter *self){
+  if (TE_DEBUG){
+    g_print ("In plug_aac.\n");
+    g_print ("Audio type is %s.\n",
+	     self->filetype);
+  } 
+
+
+  GstElement* mp4muxer = gst_element_factory_make("mp4mux",
+						  "mp4muxer");
+  gst_bin_add(GST_BIN(self->pipeline), mp4muxer);
+
+  GstPad* mp4muxer_sink = gst_element_get_pad(mp4muxer, "audio_4");
+  g_print ("mp4muxer_sink is %s\n",
+	   gst_caps_to_string(gst_pad_get_caps(mp4muxer_sink)));
+
+  gint linkOk = gst_pad_link(self->audiopad,
+			     mp4muxer_sink);
+  if (GST_PAD_LINK_FAILED(linkOk)) {
+    g_print("Could not link self->audiopad to mp4muxer_sink_in plug_aac.\n");
+  }
+  gst_element_set_state(mp4muxer, GST_STATE_PLAYING);
+
+  gst_bin_add (GST_BIN(self->pipeline), 
+	      self->outfile);
+  g_print ("self->audiopad is %s\n",
+	   gst_caps_to_string(gst_pad_get_caps(self->audiopad)));
+  
+  if (!gst_element_link (mp4muxer, self->outfile)) {
+    g_print ("Could not link mp4muxer to self->outfile in plug_aac.\n");
+  } 
+
+  gst_element_set_state(self->outfile, GST_STATE_PLAYING);
+
+  GstBus* bus = gst_pipeline_get_bus (GST_PIPELINE (self->pipeline));
+  gst_bus_add_watch (bus, 
+		     extracter_bus_cb,
+		     self);
+
+  //try to go to the start of the stream
+  //don't know if the player is at the end
+  gst_element_seek_simple(self->pipeline,
+			  self->time_format,
+			  GST_SEEK_FLAG_FLUSH,
+			  0);
+
+  if (TE_DEBUG)	   
+    tuna_extracter_get_current_pos(self);
+  
+  //unref all objects used here
+  gst_object_unref (bus);
+}
+
+
 void plug_raw(TunaExtracter *self){
   if (TE_DEBUG){
     g_print ("In plug_raw.\n");
     g_print ("Audio type is %s.\n",
 	     self->filetype);
   } 
+  g_print ("self->audiopad is %s\n",
+	   gst_caps_to_string(gst_pad_get_caps(self->audiopad)));
   
   GstElement* audioconverter = gst_element_factory_make("audioconvert",
 						       "audioconverter");
   gst_bin_add(GST_BIN(self->pipeline), audioconverter);
   GstPad* audioconverter_sink = gst_element_get_pad(audioconverter, "sink");
-  g_print ("self->audiopad is %s\n",
-	   gst_caps_to_string(gst_pad_get_caps(self->audiopad)));
   g_print ("audioconverter_sink is %s\n",
 	   gst_caps_to_string(gst_pad_get_caps(audioconverter_sink)));
   
