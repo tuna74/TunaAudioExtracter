@@ -4,3 +4,5 @@ To compile the program you will need the gstreamer and gtkmm devel packages as w
 
 
 All code is (unless otherwise stated) copyright Andreas Tunek and licensed under the GNU GPL V3 or later.
+
+A special thanks to all in #gstreamer at freenode!
