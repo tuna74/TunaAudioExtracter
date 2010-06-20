@@ -467,9 +467,10 @@ void plug_m4a_and_mux(TunaExtracter *self)
 			  GST_SEEK_FLAG_FLUSH,
 			  0);
 
-  if (TE_DEBUG)	   
-    tuna_extracter_get_current_pos(self);
+  if (TE_DEBUG)	tuna_extracter_get_current_pos(self);
   
+  gst_element_set_state(self->pipeline, GST_STATE_PLAYING);
+
   //unref all objects used here
   gst_object_unref (bus);
 }
