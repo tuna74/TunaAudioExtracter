@@ -108,7 +108,7 @@ void PlayerWindow::play_media(){
     move_scale_handler_id = 
       Glib::signal_timeout().connect(sigc::mem_fun(*this,
 						   &PlayerWindow::move_scale),
-				     1000); 
+				     2000); 
     playing = true;
   }
 }
