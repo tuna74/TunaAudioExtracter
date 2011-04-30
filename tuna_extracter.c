@@ -291,11 +291,15 @@ void filetype_found(TunaExtracter *self,
   }
 }
 
-
+static gint prev_message_type = 0;
 static gboolean extracter_bus_cb(GstBus* bus,
 				 GstMessage* message,
 				 gpointer self)
 {
+  if (prev_message_type == GST_MESSAGE_TYPE(message))return TRUE;
+
+  prev_message_type = GST_MESSAGE_TYPE(message);
+
   switch (GST_MESSAGE_TYPE(message)){
   case GST_MESSAGE_EOS:{
     if (TE_DEBUG) {
@@ -313,8 +317,9 @@ static gboolean extracter_bus_cb(GstBus* bus,
     g_print("Got warning in extracter_bus_callback.\nWarning is %s\n", 
 	    debug);
     
-    //g_free(error); crashes here
+    g_error_free(error);
     g_free(debug);
+    break;
   }
   default:{
     if (TE_DEBUG) {
