@@ -306,6 +306,16 @@ static gboolean extracter_bus_cb(GstBus* bus,
 			  "extracting_done");
     return FALSE;
   }
+  case GST_MESSAGE_WARNING:{
+    GError* error;
+    gchar* debug;
+    gst_message_parse_warning(message, &error, &debug);
+    g_print("Got warning in extracter_bus_callback.\nWarning is %s\n", 
+	    debug);
+    
+    //g_free(error);
+    g_free(debug);
+  }
   default:{
     if (TE_DEBUG) {
       g_print ("Got %s message in extracter_bus_callback.\n", 
