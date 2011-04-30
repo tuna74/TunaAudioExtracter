@@ -313,7 +313,7 @@ static gboolean extracter_bus_cb(GstBus* bus,
     g_print("Got warning in extracter_bus_callback.\nWarning is %s\n", 
 	    debug);
     
-    //g_free(error);
+    //g_free(error); crashes here
     g_free(debug);
   }
   default:{
