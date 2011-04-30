@@ -154,7 +154,11 @@ gboolean is_video_pad(GstCaps* caps)
     ret = TRUE;
   }
   //slow fallback
-  else if (g_strrstr (gst_caps_to_string(caps),"video/x-raw")){
+  else if (g_strrstr (gst_caps_to_string(caps), 
+		      "video/mpeg, mpegversion=(int)2, systemstream=(boolean)")) {
+    ret = TRUE;
+  }
+  else if (g_strrstr (gst_caps_to_string(caps),"video/x-raw")) {
     ret = TRUE;
   }
   return ret;
@@ -171,6 +175,11 @@ void set_audio_pad(TunaExtracter* self, GstPad* audio_pad, gchar* type)
 
 void set_video_pad(TunaExtracter* self, GstPad* video_pad)
 {
+  if(TE_DEBUG){
+    g_print("In set_video_pad.\n");  
+    g_print ("Pad is %s found.\n", gst_caps_to_string(gst_pad_proxy_getcaps(video_pad)));
+  }
+
   self->videopad = video_pad;
   self->video_found = TRUE;
 }
@@ -191,9 +200,9 @@ static gboolean continue_autodecoding (GstElement *pipeline,
     g_print("In continue_autodecoding.\n");  
     GST_LOG ("Caps are %" GST_PTR_FORMAT, caps);
     g_print ("Media type %s found.\n", gst_caps_to_string(caps));
+    g_print("m4a_probably_without_frame %d\n", extracter->m4a_probably_without_frame);
     g_print("audio_found %d\n", extracter->audio_found);
     g_print("video_found %d\n", extracter->video_found);
-    g_print("m4a_probably_without_frame %d\n", extracter->m4a_probably_without_frame);
   }
   if (!extracter->audio_found) {
 
@@ -220,9 +229,7 @@ static gboolean continue_autodecoding (GstElement *pipeline,
       ret = FALSE;
     }
     else if (g_strrstr (gst_caps_to_string(caps), 
-			"audio/mpeg, mpegversion=(int)4") /* || */
-	     /* g_strrstr (gst_caps_to_string(caps),  */
-	     /* 		"audio/x-m4a") */){
+			"audio/mpeg, mpegversion=(int)4")) {
       g_print ("Found a m4a.\n");
       set_audio_pad(extracter, unknown_pad, "m4a");
       ret = FALSE;
@@ -240,6 +247,11 @@ static gboolean continue_autodecoding (GstElement *pipeline,
     ret = FALSE;
   }
 
+  if(TE_DEBUG){
+    g_print("In continue_autodecoding 2.\n");  
+    g_print("audio_found %d\n", extracter->audio_found);
+    g_print("video_found %d\n", extracter->video_found);
+  }
   return ret;
 }
 
@@ -462,12 +474,15 @@ void plug_m4a_and_mux(TunaExtracter *self)
 
   //try to go to the start of the stream
   //don't know if the player is at the end
-  gst_element_seek_simple(self->pipeline,
-			  self->time_format,
-			  GST_SEEK_FLAG_FLUSH,
-			  0);
+  gboolean seeked = gst_element_seek_simple(self->pipeline,
+					    self->time_format,
+					    GST_SEEK_FLAG_FLUSH,
+					    0);
 
-  if (TE_DEBUG)	tuna_extracter_get_current_pos(self);
+  if (TE_DEBUG){
+    g_print("seeked %d.\n", seeked);
+  } 
+
   
   gst_element_set_state(self->pipeline, GST_STATE_PLAYING);
 
@@ -528,11 +543,17 @@ void plug_raw(TunaExtracter *self){
     g_print("Pos before %f\n", tuna_extracter_get_current_pos(self));
   }
 
-  gst_element_seek_simple(self->pipeline,
-			  self->time_format,
-			  GST_SEEK_FLAG_FLUSH,
-			  0);
-  
+gboolean seeked = gst_element_seek_simple(self->pipeline,
+					  self->time_format,
+					  GST_SEEK_FLAG_FLUSH,
+					  0);
+ 
+
+  if (TE_DEBUG){
+    g_print("seeked %d.\n",
+	     seeked);
+  } 
+
   if (TE_DEBUG) {
     g_print("Pos after %f\n", tuna_extracter_get_current_pos(self));
     g_print("Pipeline has state %d\n", 
@@ -545,10 +566,11 @@ void plug_raw(TunaExtracter *self){
  
  
 gdouble tuna_extracter_get_current_pos(TunaExtracter* self){
-  if(self->stream_length == 0) 
+  if(self->stream_length == 0) {
     gst_element_query_duration(self->pipeline,
 			       &(self->time_format),
 			       &(self->stream_length));
+  }
   gint64 current_pos;  
   gst_element_query_position(self->pipeline,
 			     &(self->time_format),
@@ -560,6 +582,8 @@ gdouble tuna_extracter_get_current_pos(TunaExtracter* self){
   if (TE_DEBUG) {
     g_print("tuna_extracter_get_current_pos() will return %f.\n",
 	    current_position);
+    g_print("current_pos = %.\n", current_pos);
+    g_print("stream_length = %i.\n", self->stream_length);
   }
   return current_position;
 }

@@ -307,7 +307,7 @@ void PlayerWindow::start_extracting_choosen_file(){
   updating_extracting_handler_id = 
     Glib::signal_timeout().connect(sigc::mem_fun(*this,
 						 &PlayerWindow::check_extracting_progress),
-				   1000); 
+				   4000); 
   extracter_progress.set_text("Extracting the audio file.");
   v_widget_box.pack_start(extracter_progress);
   extracter_progress.show();
