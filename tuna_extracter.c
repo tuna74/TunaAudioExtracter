@@ -177,7 +177,7 @@ void set_video_pad(TunaExtracter* self, GstPad* video_pad)
 {
   if(TE_DEBUG){
     g_print("In set_video_pad.\n");  
-    g_print ("Pad is %s found.\n", gst_caps_to_string(gst_pad_proxy_getcaps(video_pad)));
+    g_print ("Pad is %s.\n", gst_caps_to_string(gst_pad_get_caps(video_pad)));
   }
 
   self->videopad = video_pad;
@@ -310,7 +310,6 @@ static gboolean extracter_bus_cb(GstBus* bus,
     if (TE_DEBUG) {
       g_print ("Got %s message in extracter_bus_callback.\n", 
 	       GST_MESSAGE_TYPE_NAME (message));
-      g_print("Pos in extracter_bus_cb %f\n", tuna_extracter_get_current_pos(self));
       g_print("Pipeline has state %d\n", 
 	      GST_STATE(((TunaExtracter *)self)->pipeline));
     }
@@ -537,24 +536,21 @@ void plug_raw(TunaExtracter *self){
   gst_bus_add_watch (bus, 
 		     extracter_bus_cb,
 		     self);
-  //try to go to the start of the stream
+ 
+ //try to go to the start of the stream
   //don't know if the player is at the end 
   if (TE_DEBUG) {
     g_print("Pos before %f\n", tuna_extracter_get_current_pos(self));
   }
 
-gboolean seeked = gst_element_seek_simple(self->pipeline,
-					  self->time_format,
-					  GST_SEEK_FLAG_FLUSH,
-					  0);
+  gboolean seeked = gst_element_seek_simple(self->pipeline,
+					    self->time_format,
+					    GST_SEEK_FLAG_FLUSH,
+					    0);
  
-
   if (TE_DEBUG){
     g_print("seeked %d.\n",
 	     seeked);
-  } 
-
-  if (TE_DEBUG) {
     g_print("Pos after %f\n", tuna_extracter_get_current_pos(self));
     g_print("Pipeline has state %d\n", 
 	    GST_STATE(self->pipeline));
@@ -582,7 +578,7 @@ gdouble tuna_extracter_get_current_pos(TunaExtracter* self){
   if (TE_DEBUG) {
     g_print("tuna_extracter_get_current_pos() will return %f.\n",
 	    current_position);
-    g_print("current_pos = %.\n", current_pos);
+    g_print("current_pos = %i.\n", current_pos);
     g_print("stream_length = %i.\n", self->stream_length);
   }
   return current_position;
