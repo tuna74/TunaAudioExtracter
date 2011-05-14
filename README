@@ -1,6 +1,6 @@
 Tuna Audio Extracter (TAE) is a program that lets you extract the audio part from video files. TAE will try to dump the highest quality file with the least amount of least amount of recoding of the audio. Embedded mp3, mp2 and aac/m4a4A streams will be extracted and saved without any loss of quality or re-encoding. All other streams will be converted and encoded to .flac files.
 
-To compile the program you will need the gstreamer and gtkmm devel packages as well ass gcc, gcc++ and gnu make. Get them from your distro. You should also get all gstreamer plugins so you can decode media files and codecs. When you have all the tools, libraries and plugins, compile with 'make' and run the program with './tae' .
+To compile the program you will need the gstreamer and gtkmm 3.0 devel packages as well ass gcc, gcc++ and gnu make. Get them from your distro. You should also get all gstreamer plugins so you can decode media files and codecs. When you have all the tools, libraries and plugins, compile with 'make' and run the program with './tae' .
 
 
 All code is (unless otherwise stated) copyright Andreas Tunek and licensed under the GNU GPL V3 or later.
